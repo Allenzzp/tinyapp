@@ -1,13 +1,19 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+
 const app = express();
 const PORT = 8080;
 
-app.set("view engine", "ejs");
+
 //use app.render() to load up an ejs view file
+app.set("view engine", "ejs");
 
+//middleware
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
 
+//helper functions
 function geneteRandomString() {
   const letters = "abcdefghijklmnopqrstuvwxyz";
   let randomURL = "";
@@ -31,6 +37,7 @@ function makeFullURL(url) {
   return url;
 }
 
+//handle GET
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -41,18 +48,25 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { 
+  urls: urlDatabase,
+  username: req.cookies["username"], 
+  };
   res.render("urls_index", templateVars);
- });
+});
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { 
+    username: req.cookies["username"], 
+  };
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
+    username: req.cookies["username"],
   };
   res.render("urls_show", templateVars);
 });
@@ -63,7 +77,7 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
-//follwoings are POST handling 
+//handle POST
 app.post("/urls", (req, res) => {
   const shortURL = geneteRandomString();
   urlDatabase[shortURL] = makeFullURL(req.body.longURL);
@@ -87,6 +101,18 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[deleteUrl];
   res.redirect("/urls");
 });
+
+app.post("/login", (req, res) => {
+  if (!req.cookies.username) {
+    res.cookie("username", req.body.username);
+  }
+  res.redirect("/urls");
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("username", req.cookies["username"]);
+  res.redirect("/urls");
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
