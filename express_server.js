@@ -27,10 +27,6 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
@@ -48,13 +44,29 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  let longURL = urlDatabase[req.params.shortURL];
+  const prefix1 = "http://";
+  const prefix2 = "www.";
+
+  if (longURL.indexOf(prefix2) === -1) {
+    longURL = prefix2 + longURL;
+  }
+
+  if (longURL.indexOf(prefix1) === -1) {
+    longURL = prefix1 + longURL;
+  }
+  
+  res.redirect(longURL);
+});
+
+
 app.post("/urls", (req, res) => {
   const shortURL = geneteRandomString();
   urlDatabase[shortURL] = req.body.longURL;
   console.log(urlDatabase);
-  res.send(`url shortted is ${geneteRandomString()}`);
+  res.redirect(`/urls/${shortURL}`);
 });
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
