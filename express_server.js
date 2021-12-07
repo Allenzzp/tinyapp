@@ -17,6 +17,19 @@ function geneteRandomString() {
   }
   return randomURL;
 }
+function makeFullURL(url) {
+  const prefix1 = "http://";
+  const prefix2 = "www.";
+
+  if (url.indexOf(prefix2) === -1) {
+    url = prefix2 + url;
+  }
+
+  if (url.indexOf(prefix1) === -1) {
+    url = prefix1 + url;
+  }
+  return url;
+}
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -46,28 +59,35 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   let longURL = urlDatabase[req.params.shortURL];
-  const prefix1 = "http://";
-  const prefix2 = "www.";
-
-  if (longURL.indexOf(prefix2) === -1) {
-    longURL = prefix2 + longURL;
-  }
-
-  if (longURL.indexOf(prefix1) === -1) {
-    longURL = prefix1 + longURL;
-  }
-  
+  longURL = makeFullURL(longURL);
   res.redirect(longURL);
 });
 
-
+//follwoings are POST handling 
 app.post("/urls", (req, res) => {
   const shortURL = geneteRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  console.log(urlDatabase);
+  urlDatabase[shortURL] = makeFullURL(req.body.longURL);
   res.redirect(`/urls/${shortURL}`);
+});
+
+app.post("/urls/:id", (req, res) => {
+  res.redirect(`/urls/${req.params.id}`);
+});
+
+app.post("/urls/:shortURL/update", (req, res) => {
+  const newShortUrl = req.params.shortURL;
+  let newLongUrl = req.body.longURL;
+  newLongUrl = makeFullURL(newLongUrl);
+  urlDatabase[newShortUrl] = newLongUrl;
+  res.redirect("/urls");
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  const deleteUrl = req.params.shortURL;
+  delete urlDatabase[deleteUrl];
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
-});
+}); 
