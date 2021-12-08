@@ -60,25 +60,34 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  const cookiedId = req.cookies["user_id"];
+  const user = users[cookiedId] || {};
+  const email = user.email;
   const templateVars = { 
+    email,
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]], 
   };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
+  const cookiedId = req.cookies["user_id"];
+  const user = users[cookiedId] || {};
+  const email = user.email;
   const templateVars = { 
-    user: users[req.cookies["user_id"]], 
+    email,
   };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  const cookiedId = req.cookies["user_id"];
+  const user = users[cookiedId] || {};
+  const email = user.email;
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    user: users[req.cookies["user_id"]],
+    email,
   };
   res.render("urls_show", templateVars);
 });
@@ -90,16 +99,22 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = {
-    user: users[req.cookies["user_id"]],
-  }
+  const cookiedId = req.cookies["user_id"];
+  const user = users[cookiedId] || {};
+  const email = user.email;
+  const templateVars = { 
+    email,
+  };
   res.render("register", templateVars);
 });
 
 app.get("/login", (req, res) => {
-  const templateVars = {
-    user: users[req.cookies["user_id"]],
-  }
+  const cookiedId = req.cookies["user_id"];
+  const user = urlDatabase[cookiedId] || {};
+  const email = user.email;
+  const templateVars = { 
+    email,
+  };
   res.render("login", templateVars);
 });
 
@@ -134,6 +149,7 @@ app.post("/login", (req, res) => {
   const key = emailExist(email, users);
   const templateVars = {
     desc: "",
+    type: "login",
   };
   if (!key) {
     res.status(403);
@@ -158,7 +174,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id", req.cookies["user_id"]);
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
@@ -167,6 +183,7 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
   const templateVars = {
     desc: "",
+    type: "register"
   }; 
 
   if (email === "") {

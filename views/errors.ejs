@@ -7,23 +7,32 @@
   <title>TinyApp</title>
 </head>
 <body>
-  
+  <% if (type === "register") { %>
+    <h1 style="text-align: center; color: red">Registration Failed</h1>
     <% if (desc === "noemail") { %>
-      <h1 style="text-align: center; color: red">Registration Failed</h1>
       <h3 style="text-align: center;">Please enter your <strong>email address</strong>to finish Registration!</h3>
     <% } else if (desc === "emailexist") { %>
-      <h1 style="text-align: center; color: red">Registration Failed</h1>
       <h3 style="text-align: center;">The email you entered is already existed!</h3>
     <% } else if (desc === "nopassword") { %>
-      <h1 style="text-align: center; color: red">Registration Failed</h1>
       <h3 style="text-align: center;">Please enter your <strong>password</strong> to finish Registration!</h3>
-    <% } else if (desc === "emailnotfound") { %>
-      <h1 style="text-align: center; color: red">Login Failed</h1>
+    <% } %>
+    <div style="text-align: center;">
+      <a href="/register" ><button type="button">Register</button></a>
+    </div>
+    
+  <% } %>
+  
+  <% if (type === "login") { %>
+    <h1 style="text-align: center; color: red">Login Failed</h1>
+    <% if (desc === "emailnotfound") { %>
       <h3 style="text-align: center;">We cannot found your email in our database!</h3>
     <% } else if (desc === "wrongpassword") { %>
-      <h1 style="text-align: center; color: red">Login Failed</h1>
       <h3 style="text-align: center;">Password does not match!</h3>
     <% } %>
-  </h3>
+    <div style="text-align: center;">
+      <a href="/Login"><button type="button">Login</button></a>
+    </div>
+  <% } %>
+     
 </body>
 </html>
