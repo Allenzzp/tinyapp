@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TinyApp</title>
+</head>
+<body>
+  <h1 style="text-align: center; color: red">Registration Failed</h1>
+  <h3 style="text-align: center;">
+    <% if (desc === "noemail") { %>
+      Please enter your <strong>email address</strong>to finish Registration!
+    <% } else if (desc === "emailexist") { %>
+      The email you entered is already existed!
+    <% } else if (desc === "nopassword") { %>
+      Please enter your <strong>password</strong> to finish Registration!
+    <% } %>
+  </h3>
+</body>
+</html>

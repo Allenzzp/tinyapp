@@ -13,15 +13,15 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
       <div>
-        <% if (!username) { %>
-          <form action="/login" method="POST" style="left: 450px; position: relative">
-            <input type="text" name="username" placeholder="Username">
-            <button type="submit">Login</button>
+        <% if (user && user.email && user.password) { %>
+          <form action="/logout" method="POST" style="left: 200px; position: relative;">
+            <label><h5 style="margin: 0 6px 0 0">Logged In As: <%= user.email %>!</h5></label>
+            <button type="submit">Logout</button>
           </form>
         <% } else { %>
-          <form action="/logout" method="POST" style="left: 400px; position: relative;">
-            <label><h5 style="margin: 0 6px 0 0">Logged In As: <%= username %>!</h5></label>
-            <button type="submit">Logout</button>
+          <form action="/login" method="POST" style="left: 450px; position: relative">
+            <input type="text" name="email" placeholder="Email Address">
+            <button type="submit">Login</button>
           </form>
         <% } %>
       </div>
