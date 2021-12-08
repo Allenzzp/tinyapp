@@ -19,10 +19,10 @@
             <button type="submit">Logout</button>
           </form>
         <% } else { %>
-          <form action="/login" method="POST" style="left: 450px; position: relative">
-            <input type="text" name="email" placeholder="Email Address">
-            <button type="submit">Login</button>
-          </form>
+          <div style="display: flex; left: 500px; position: relative;">
+            <a href="/login" style="margin-right: 10px"><button type="submit">Login</button></a>
+            <a href="/register"><button type="submit">Register</button></a>
+          </div>
         <% } %>
       </div>
     </div>

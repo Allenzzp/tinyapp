@@ -39,7 +39,7 @@ function makeFullURL(url) {
 function emailExist(email, obj) {
   for (let key in obj) {
     if (obj[key]["email"] === email) {
-      return true;
+      return key;
     }
   }
   return false;
@@ -96,6 +96,13 @@ app.get("/register", (req, res) => {
   res.render("register", templateVars);
 });
 
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: users[req.cookies["user_id"]],
+  }
+  res.render("login", templateVars);
+});
+
 //handle POST
 app.post("/urls", (req, res) => {
   const shortURL = geneteRandomString();
@@ -122,8 +129,15 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  if (urls[req.cookies["user_id"]].email === req.body.email) {
-    res.redirect("/urls");
+  const email = req.body.email;
+  const password = req.body.password;
+  const key = emailExist(email, users);
+  if (!key) {
+
+  } else {
+    if (users[key].password === password) {
+      res.redirect("/urls");
+    }
   }
 });
 
@@ -138,7 +152,7 @@ app.post("/register", (req, res) => {
   const templateVars = {
     desc: "",
   }; 
-  
+
   if (email === "") {
     templateVars.desc = "noemail";
   } else if (password === "") {
@@ -162,8 +176,6 @@ app.post("/register", (req, res) => {
   }
 });
 
-
-
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
-}); 
+});
