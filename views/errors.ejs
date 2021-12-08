@@ -7,14 +7,22 @@
   <title>TinyApp</title>
 </head>
 <body>
-  <h1 style="text-align: center; color: red">Registration Failed</h1>
-  <h3 style="text-align: center;">
+  
     <% if (desc === "noemail") { %>
-      Please enter your <strong>email address</strong>to finish Registration!
+      <h1 style="text-align: center; color: red">Registration Failed</h1>
+      <h3 style="text-align: center;">Please enter your <strong>email address</strong>to finish Registration!</h3>
     <% } else if (desc === "emailexist") { %>
-      The email you entered is already existed!
+      <h1 style="text-align: center; color: red">Registration Failed</h1>
+      <h3 style="text-align: center;">The email you entered is already existed!</h3>
     <% } else if (desc === "nopassword") { %>
-      Please enter your <strong>password</strong> to finish Registration!
+      <h1 style="text-align: center; color: red">Registration Failed</h1>
+      <h3 style="text-align: center;">Please enter your <strong>password</strong> to finish Registration!</h3>
+    <% } else if (desc === "emailnotfound") { %>
+      <h1 style="text-align: center; color: red">Login Failed</h1>
+      <h3 style="text-align: center;">We cannot found your email in our database!</h3>
+    <% } else if (desc === "wrongpassword") { %>
+      <h1 style="text-align: center; color: red">Login Failed</h1>
+      <h3 style="text-align: center;">Password does not match!</h3>
     <% } %>
   </h3>
 </body>

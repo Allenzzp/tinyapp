@@ -132,17 +132,33 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const key = emailExist(email, users);
+  const templateVars = {
+    desc: "",
+  };
   if (!key) {
-
+    res.status(403);
+    templateVars.desc = "emailnotfound";
+    res.render("errors", templateVars);
   } else {
     if (users[key].password === password) {
+      const id = geneteRandomString();
+      users[id] = {
+        id,
+        email,
+        password,
+      };
+      res.cookie("user_id", id);
       res.redirect("/urls");
+    } else {
+      res.status(403);
+      templateVars.desc = "wrongpassword";
+      res.render("errors", templateVars);
     }
   }
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username", req.cookies["username"]);
+  res.clearCookie("user_id", req.cookies["user_id"]);
   res.redirect("/urls");
 });
 
