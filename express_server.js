@@ -104,7 +104,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/login", (req, res) => {
   if (!req.cookies.username) {
-    res.cookie("username", req.body.username);
+    res.cookie("username", req.body.username, {
+      expires: new Date(Date.now() + 24 * 3600000) //cookies expire after 24 hours
+    });
   }
   res.redirect("/urls");
 });
