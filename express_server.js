@@ -83,13 +83,26 @@ function urlsForUser(id) {
   }
   return urls;
 }
+function badCookie(req, res) {
+  //check user exist
+  const userIDarr = Object.keys(users);
+  if (userIDarr.includes(req.cookies["user_id"])) {
+    return;
+  }
+  res.clearCookie("user_id");
+}
 
 //handle GET
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.cookies["user_id"]) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
 });
 
 app.get("/urls", (req, res) => {
+  badCookie(req, res);
   const cookiedId = req.cookies["user_id"];
   const user = users[cookiedId] || {};
   const email = user.email;
@@ -97,7 +110,7 @@ app.get("/urls", (req, res) => {
     const templateVars = { 
       email,
     };
-    res.render("notlogin", templateVars);
+    res.status(401).render("notlogin", templateVars);
   } else {
     const urlList = urlsForUser(cookiedId);
     const templateVars = { 
@@ -109,6 +122,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
+  badCookie(req, res);
   const cookiedId = req.cookies["user_id"];
   if (!checkLogin(cookiedId)) {
     res.redirect("/login");
@@ -123,25 +137,23 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
+  badCookie(req, res);
   const cookiedId = req.cookies["user_id"];
   const targetSURL = req.params.shortURL;
   const user = users[cookiedId] || {};
   const email = user.email;
+  let templateVars = { 
+    email,
+  };
   if (cookiedId === undefined) {
-    const templateVars = { 
-      email,
-    };
-    res.status(401);
-    res.render("notlogin", templateVars);
+    res.status(401).render("notlogin", templateVars);
+  } else if(!urlDatabase[targetSURL]) {
+    res.status(404).render("pagenotfound", templateVars);
   } else if (urlDatabase[targetSURL].userID !== cookiedId) {
-    const templateVars = { 
-      email,
-    };
-    res.status(403);
-    res.render("notyourURL", templateVars);
+    res.status(403).render("notyourURL", templateVars);
   } else {
-    const templateVars = {
-      shortURL: req.params.shortURL,
+    templateVars = {
+      shortURL: targetSURL,
       longURL: urlDatabase[targetSURL].longURL,
       creator: urlDatabase[targetSURL].userID,
       email,
@@ -151,8 +163,16 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL] === undefined) {
-    res.status(404).send('<h1 style="text-align:center">Page Not Found!</h1>');
+  badCookie(req, res);
+  const cookiedId = req.cookies["user_id"];
+  const targetSURL = req.params.shortURL;
+  const user = users[cookiedId] || {};
+  const email = user.email;
+  const templateVars = { 
+    email,
+  };
+  if (urlDatabase[targetSURL] === undefined) {
+    res.status(404).render("pagenotfound", templateVars);
   } else {
     let longURL = urlDatabase[req.params.shortURL].longURL;
     longURL = makeFullURL(longURL);
@@ -161,29 +181,40 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  badCookie(req, res);
   const cookiedId = req.cookies["user_id"];
+  if (cookiedId) {
+    res.redirect("/urls");
+  } else {
   const user = users[cookiedId] || {};
   const email = user.email;
   const templateVars = { 
     email,
   };
   res.render("register", templateVars);
+ }
 });
 
 app.get("/login", (req, res) => {
+  badCookie(req, res);
   const cookiedId = req.cookies["user_id"];
-  const user = urlDatabase[cookiedId] || {};
-  const email = user.email;
-  const templateVars = { 
-    email,
-  };
-  res.render("login", templateVars);
+  if (cookiedId) {
+    res.redirect("/urls");
+  } else {
+    const user = urlDatabase[cookiedId] || {};
+    const email = user.email;
+    const templateVars = { 
+      email,
+    };
+    res.render("login", templateVars);
+  }
 });
 
 
 
 //handle POST
 app.post("/urls", (req, res) => {
+  badCookie(req, res);
   const cookie = req.cookies["user_id"];
   if (!checkLogin(cookie)) {
     res.status(401).send("You need to login first to generate a short URL!");
@@ -197,11 +228,8 @@ app.post("/urls", (req, res) => {
   }
 });
 
-app.post("/urls/:id", (req, res) => {
-  res.redirect(`/urls/${req.params.id}`);
-});
-
-app.post("/urls/:shortURL/update", (req, res) => {
+app.post("/urls/:shortURL", (req, res) => {
+  badCookie(req, res);
   const cookiedId = req.cookies["user_id"];
   const targetSURL = req.params.shortURL;
   if (cookiedId === undefined) {
@@ -217,6 +245,7 @@ app.post("/urls/:shortURL/update", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
+  badCookie(req, res);
   const cookiedId = req.cookies["user_id"];
   const targetSURL = req.params.shortURL;
   if (cookiedId === undefined) {
@@ -288,6 +317,8 @@ app.post("/register", (req, res) => {
     res.redirect("/urls");
   }
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
