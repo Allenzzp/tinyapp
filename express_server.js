@@ -69,7 +69,7 @@ app.get("/urls", (req, res) => {
   badCookie(req, res);
   const {cookiedId, email} = setupHeader(req, users);
   if (cookiedId === undefined) {
-    const templateVars = { 
+    const templateVars = {
       email,
     };
     res.status(401).render("notlogin", templateVars);
@@ -177,7 +177,7 @@ app.post("/urls", (req, res) => {
     urlDatabase[shortURL] = {
       longURL: makeFullURL(req.body.longURL),
       userID: cookiedID,
-    }
+    };
     res.redirect(`/urls/${shortURL}`);
   }
 });
