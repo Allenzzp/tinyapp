@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
 const cookieSession = require("cookie-session");
+const {emailExist, geneteRandomString, makeFullURL, urlsForUser, setupHeader} = require("./helpers");
 
 const app = express();
 const PORT = 8080;
@@ -46,66 +47,13 @@ const users = {
 };
 
 //helper functions
-function geneteRandomString() {
-  const letters = "abcdefghijklmnopqrstuvwxyz";
-  let randomURL = "";
-  for (let i = 0; i < 6; i++) {
-    let randomIndex = Math.floor(Math.random() * 26);
-    randomURL += letters[randomIndex];
-  }
-  return randomURL;
-}
-
-function makeFullURL(url) {
-  const prefix1 = "http://";
-  const prefix2 = "www.";
-
-  if (url.indexOf(prefix2) === -1) {
-    url = prefix2 + url;
-  }
-
-  if (url.indexOf(prefix1) === -1) {
-    url = prefix1 + url;
-  }
-  return url;
-}
-
-function emailExist(email, obj) {
-  for (let key in obj) {
-    if (obj[key]["email"] === email) {
-      return key;
-    }
-  }
-  return false;
-}
-
-function urlsForUser(id) {
-  const urls = {};
-  for (let shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      urls[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return urls;
-}
-
 function badCookie(req, res) {
   //check user exist
   const userIDarr = Object.keys(users);
   if (userIDarr.includes(req.session.user_id)) {
     return;
   }
-  res.clearCookie("user_id");
-}
-
-function setupHeader(req) {
-  const cookiedId = req.session.user_id;
-  const user = users[cookiedId] || {};
-  const email = user.email;
-  return {
-    cookiedId,
-    email
-  };
+  req.session = null;
 }
 
 //handle GET
@@ -119,14 +67,14 @@ app.get("/", (req, res) => {
 
 app.get("/urls", (req, res) => {
   badCookie(req, res);
-  const {cookiedId, email} = setupHeader(req);
+  const {cookiedId, email} = setupHeader(req, users);
   if (cookiedId === undefined) {
     const templateVars = { 
       email,
     };
     res.status(401).render("notlogin", templateVars);
   } else {
-    const urlList = urlsForUser(cookiedId);
+    const urlList = urlsForUser(cookiedId, urlDatabase);
     const templateVars = { 
       email,
       urls: urlList,
@@ -152,7 +100,7 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   badCookie(req, res);
-  const {cookiedId, email} = setupHeader(req);
+  const {cookiedId, email} = setupHeader(req, users);
   const targetSURL = req.params.shortURL;
   let templateVars = { 
     email,
@@ -176,7 +124,7 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   badCookie(req, res);
-  const {cookiedId, email} = setupHeader(req);
+  const {cookiedId, email} = setupHeader(req, users);
   const targetSURL = req.params.shortURL;
   const templateVars = { 
     email,
@@ -192,7 +140,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.get("/register", (req, res) => {
   badCookie(req, res);
-  const {cookiedId, email} = setupHeader(req);
+  const {cookiedId, email} = setupHeader(req, users);
   if (cookiedId) {
     res.redirect("/urls");
   } else {
@@ -205,7 +153,7 @@ app.get("/register", (req, res) => {
 
 app.get("/login", (req, res) => {
   badCookie(req, res);
-  const {cookiedId, email} = setupHeader(req);
+  const {cookiedId, email} = setupHeader(req, users);
   if (cookiedId) {
     res.redirect("/urls");
   } else {
@@ -217,8 +165,8 @@ app.get("/login", (req, res) => {
 });
 
 
+//handle POST/////////////////////////////////////////////////////////
 
-//handle POST
 app.post("/urls", (req, res) => {
   badCookie(req, res);
   const cookiedID = req.session.user_id;
@@ -244,8 +192,10 @@ app.post("/urls/:shortURL", (req, res) => {
     res.status(403).send("You cannot update others' URLs!");
   } else {
     let newLongUrl = req.body.longURL;
-    newLongUrl = makeFullURL(newLongUrl);
-    urlDatabase[targetSURL]["longURL"] = newLongUrl;
+    if (newLongUrl !== "") {
+      newLongUrl = makeFullURL(newLongUrl);
+      urlDatabase[targetSURL]["longURL"] = newLongUrl;
+    }
     res.redirect("/urls");
   }
 });
