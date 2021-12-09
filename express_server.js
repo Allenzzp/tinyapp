@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 
 const app = express();
 const PORT = 8080;
@@ -36,7 +37,7 @@ const users = {
   "2222": {
     id: "2222",
     email: "123@gmail.com",
-    password: "123",
+    password: bcrypt.hashSync("123"),
   }
 };
 
@@ -271,7 +272,7 @@ app.post("/login", (req, res) => {
     templateVars.desc = "emailnotfound";
     res.render("errors", templateVars);
   } else {
-    if (users[id].password === password) {
+    if (bcrypt.compareSync(password, users[id].password)) {
       res.cookie("user_id", id);
       res.redirect("/urls");
     } else {
@@ -289,7 +290,8 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   const email = req.body.email;
-  const password = req.body.password;
+  let password = req.body.password;
+  password = bcrypt.hashSync(password, 10);
   const templateVars = {
     desc: "",
     type: "register"
