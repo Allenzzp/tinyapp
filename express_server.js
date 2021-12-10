@@ -22,11 +22,11 @@ app.use(cookieSession({
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
-    userID: "aJ48lW",
+    userID: "swswsw",
   },
   "9sm5xK": {
     longURL: "http://www.google.com",
-    userID: "aJ48lW",
+    userID: "swswsw",
   },
   "wokert": {
     longURL: "http://www.amazon.com",
@@ -37,13 +37,17 @@ const urlDatabase = {
     userID: "2222",
   }
 };
-
 const users = {
   "2222": {
     id: "2222",
     email: "123@gmail.com",
     password: bcrypt.hashSync("123"),
-  }
+  },
+  "swswsw": {
+    id: "swswsw",
+    email: "2690@qq.com",
+    password: bcrypt.hashSync("2690"),
+  },
 };
 
 //helper functions
@@ -202,11 +206,12 @@ app.post("/urls/:shortURL", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   badCookie(req, res);
+  if (!req.session) {
+    return res.status(401).send("You need to login to delete URLs!");
+  }
   const cookiedId = req.session.user_id;
   const targetSURL = req.params.shortURL;
-  if (cookiedId === undefined) {
-    res.status(401).send("You need to login to delete URLs!");
-  } else if (urlDatabase[targetSURL].userID !== cookiedId) {
+  if (urlDatabase[targetSURL].userID !== cookiedId) {
     res.status(403).send("You cannot delete others' URLs!");
   } else {
   delete urlDatabase[targetSURL];
@@ -246,7 +251,6 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   let password = req.body.password;
-  password = bcrypt.hashSync(password, 10);
   const templateVars = {
     desc: "",
     type: "register"
@@ -264,6 +268,7 @@ app.post("/register", (req, res) => {
     res.status(400);
     res.render("errors", templateVars);
   } else {
+    password = bcrypt.hashSync(password, 10);
     const id = geneteRandomString();
     users[id] = {
       id,
