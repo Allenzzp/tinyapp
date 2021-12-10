@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
 const cookieSession = require("cookie-session");
+const methodOverride = require("method-override");
 const {emailExist, geneteRandomString, makeFullURL, urlsForUser, setupHeader} = require("./helpers");
 
 const app = express();
@@ -17,6 +18,7 @@ app.use(cookieSession({
   keys: ["secret"],
   maxAge: 24 * 60 * 60 * 1000
 }));
+app.use(methodOverride("_method"));
 
 //databse
 const urlDatabase = {
@@ -62,7 +64,7 @@ function badCookie(req, res) {
 
 //handle GET
 app.get("/", (req, res) => {
-  if (req.session.user_id) {
+  if (req.session) {
     res.redirect("/urls");
   } else {
     res.redirect("/login");
@@ -89,37 +91,34 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   badCookie(req, res);
-  const cookiedId = req.session.user_id;
-  if (!cookiedId) {
-    res.redirect("/login");
-  } else {
-    const user = users[cookiedId] || {};
-    const email = user.email;
-    const templateVars = { 
-      email,
-    };
-    res.render("urls_new", templateVars);
+  if (!req.session) {
+    return res.redirect("/login");
   }
+  const {email} = setupHeader(req, users);
+  const templateVars = { 
+    email,
+  };
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   badCookie(req, res);
   const {cookiedId, email} = setupHeader(req, users);
-  const targetSURL = req.params.shortURL;
+  const targetShortURL = req.params.shortURL;
   let templateVars = { 
     email,
   };
   if (cookiedId === undefined) {
     res.status(401).render("notlogin", templateVars);
-  } else if(!urlDatabase[targetSURL]) {
+  } else if(!urlDatabase[targetShortURL]) {
     res.status(404).render("pagenotfound", templateVars);
-  } else if (urlDatabase[targetSURL].userID !== cookiedId) {
+  } else if (urlDatabase[targetShortURL].userID !== cookiedId) {
     res.status(403).render("notyourURL", templateVars);
   } else {
     templateVars = {
-      shortURL: targetSURL,
-      longURL: urlDatabase[targetSURL].longURL,
-      creator: urlDatabase[targetSURL].userID,
+      shortURL: targetShortURL,
+      longURL: urlDatabase[targetShortURL].longURL,
+      creator: urlDatabase[targetShortURL].userID,
       email,
     };
     res.render("urls_show", templateVars);
@@ -128,16 +127,15 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   badCookie(req, res);
-  const {cookiedId, email} = setupHeader(req, users);
-  const targetSURL = req.params.shortURL;
+  const {email} = setupHeader(req, users);
+  const targetShortURL = req.params.shortURL;
   const templateVars = { 
     email,
   };
-  if (urlDatabase[targetSURL] === undefined) {
+  if (urlDatabase[targetShortURL] === undefined) {
     res.status(404).render("pagenotfound", templateVars);
   } else {
-    let longURL = urlDatabase[req.params.shortURL].longURL;
-    longURL = makeFullURL(longURL);
+    const longURL = urlDatabase[req.params.shortURL].longURL;
     res.redirect(longURL);
   }
 });
@@ -170,53 +168,52 @@ app.get("/login", (req, res) => {
 
 
 //handle POST/////////////////////////////////////////////////////////
-
+//create new short&long url pair
 app.post("/urls", (req, res) => {
   badCookie(req, res);
+  if (!req.session) {
+    return res.status(401).send("You need to login first to generate a short URL!");
+  }
   const cookiedID = req.session.user_id;
-  if (!cookiedID) {
-    res.status(401).send("You need to login first to generate a short URL!");
-  } else {
-    const shortURL = geneteRandomString();
-    urlDatabase[shortURL] = {
-      longURL: makeFullURL(req.body.longURL),
-      userID: cookiedID,
-    };
-    res.redirect(`/urls/${shortURL}`);
-  }
+  const shortURL = geneteRandomString();
+  urlDatabase[shortURL] = {
+    longURL: makeFullURL(req.body.longURL),
+    userID: cookiedID,
+  };
+  res.redirect(`/urls/${shortURL}`);
 });
-
-app.post("/urls/:shortURL", (req, res) => {
-  badCookie(req, res);
-  const cookiedId = req.session.user_id;
-  const targetSURL = req.params.shortURL;
-  if (cookiedId === undefined) {
-    res.status(401).send("You need to login to update URLs!");
-  } else if (urlDatabase[targetSURL].userID !== cookiedId) {
-    res.status(403).send("You cannot update others' URLs!");
-  } else {
-    let newLongUrl = req.body.longURL;
-    if (newLongUrl !== "") {
-      newLongUrl = makeFullURL(newLongUrl);
-      urlDatabase[targetSURL]["longURL"] = newLongUrl;
-    }
-    res.redirect("/urls");
-  }
-});
-
-app.post("/urls/:shortURL/delete", (req, res) => {
+//updare or delete current url pair
+app.put("/urls/:shortURL", (req, res) => {
   badCookie(req, res);
   if (!req.session) {
-    return res.status(401).send("You need to login to delete URLs!");
+    return res.status(401).send(`You need to login to update URLs!`);
   }
   const cookiedId = req.session.user_id;
-  const targetSURL = req.params.shortURL;
-  if (urlDatabase[targetSURL].userID !== cookiedId) {
-    res.status(403).send("You cannot delete others' URLs!");
-  } else {
-  delete urlDatabase[targetSURL];
-  res.redirect("/urls");
+  const targetShortURL = req.params.shortURL;
+  if (urlDatabase[targetShortURL].userID !== cookiedId) {
+    return res.status(403).send(`You cannot update others' URLs!`);
   }
+
+  let newLongUrl = req.body.longURL;
+  if (newLongUrl !== "") {
+    newLongUrl = makeFullURL(newLongUrl);
+    urlDatabase[targetShortURL]["longURL"] = newLongUrl;
+  }
+    res.redirect("/urls");
+});
+
+app.delete("/urls/:shortURL", (req, res) => {
+  badCookie(req, res);
+  if (!req.session) {
+    return res.status(401).send(`You need to login to delete URLs!`);
+  }
+  const cookiedId = req.session.user_id;
+  const targetShortURL = req.params.shortURL;
+  if (urlDatabase[targetShortURL].userID !== cookiedId) {
+    return res.status(403).send(`You cannot delete others' URLs!`);
+  }
+  delete urlDatabase[targetShortURL];
+  res.redirect("/urls");
 });
 
 app.post("/login", (req, res) => {
