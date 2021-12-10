@@ -24,8 +24,22 @@
         <input type="text" name="longURL" placeholder="<%= longURL %>" style="width: 300px">
         <button type="submit" class="btn btn-primary">Submit</button>
       </form>
-      
     </div>
+  </div>
+
+  <div class="card text-center">
+    <div class="card-header"></div>
+    <div class="card-body">
+      <h5 class="card-title">LHL Analytics</h5>
+      <p class="card-text">Total Visits: <%= visits %>  Unique Visitors: <%= visitors %></p>
+      <p class="card-text">Visits Records: (I'm watching U!) </p>
+      <% for (let record of visiRecords) { %>
+        <ul>
+          <li><%= record %></li>
+        </ul>
+      <% } %>
+    </div>
+    <div class="card-footer text-muted"></div>
   </div>
 
   <!-- Bootstrap JS -->

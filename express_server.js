@@ -25,18 +25,30 @@ const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
     userID: "swswsw",
+    visits: 0,
+    visitors: [],
+    visiRecords: [],
   },
   "9sm5xK": {
     longURL: "http://www.google.com",
     userID: "swswsw",
+    visits: 0,
+    visitors: [],
+    visiRecords: [],
   },
   "wokert": {
     longURL: "http://www.amazon.com",
     userID: "2222",
+    visits: 0,
+    visitors: [],
+    visiRecords: [],
   },
   "sdefrs": {
     longURL: "http://www.microsoft.com",
     userID: "2222",
+    visits: 0,
+    visitors: [],
+    visiRecords: [],
   }
 };
 const users = {
@@ -51,6 +63,7 @@ const users = {
     password: bcrypt.hashSync("2690"),
   },
 };
+class Anonymous {};
 
 //helper functions
 function badCookie(req, res) {
@@ -120,6 +133,9 @@ app.get("/urls/:shortURL", (req, res) => {
       longURL: urlDatabase[targetShortURL].longURL,
       creator: urlDatabase[targetShortURL].userID,
       email,
+      visits: urlDatabase[targetShortURL].visits,
+      visitors: urlDatabase[targetShortURL].visitors.length,
+      visiRecords: urlDatabase[targetShortURL].visiRecords,
     };
     res.render("urls_show", templateVars);
   }
@@ -127,17 +143,24 @@ app.get("/urls/:shortURL", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   badCookie(req, res);
-  const {email} = setupHeader(req, users);
+  const {cookiedId, email} = setupHeader(req, users);
   const targetShortURL = req.params.shortURL;
   const templateVars = { 
     email,
   };
   if (urlDatabase[targetShortURL] === undefined) {
-    res.status(404).render("pagenotfound", templateVars);
-  } else {
-    const longURL = urlDatabase[req.params.shortURL].longURL;
-    res.redirect(longURL);
+    return res.status(404).render("pagenotfound", templateVars);
   }
+  const shortURLObj = urlDatabase[targetShortURL];
+  const longURL = shortURLObj.longURL;
+  shortURLObj.visits++;
+  const user = (cookiedId)? cookiedId : new Anonymous();
+  if (!shortURLObj.visitors.includes(user)) {
+    shortURLObj.visitors.push(user);
+  }
+  const time = new Date();
+  shortURLObj.visiRecords.push(geneteRandomString() + "/" + time);
+  res.redirect(longURL);
 });
 
 app.get("/register", (req, res) => {
@@ -179,6 +202,9 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = {
     longURL: makeFullURL(req.body.longURL),
     userID: cookiedID,
+    visits: 0,
+    visitors: [],
+    visiRecords: [],
   };
   res.redirect(`/urls/${shortURL}`);
 });
@@ -262,8 +288,7 @@ app.post("/register", (req, res) => {
   }
 
   if (templateVars.desc !== "") {
-    res.status(400);
-    res.render("errors", templateVars);
+    res.status(400).render("errors", templateVars);
   } else {
     password = bcrypt.hashSync(password, 10);
     const id = geneteRandomString();
